@@ -139,7 +139,11 @@ function stopVinylCrackle() {
 function loadTrackToPlatter(track) {
   isDiscLoaded = true;
   currentTrack = track;
-  vinylRecord.classList.remove('ejecting');
+  
+  // Hacer visible el disco
+  vinylRecord.classList.remove('vinyl-hidden', 'ejecting');
+  vinylRecord.classList.add('vinyl-visible');
+
   vinylLabelImg.src = track.cover;
   vinylLabelTitle.textContent = track.title;
   vinylLabelArtist.textContent = track.artist;
@@ -154,12 +158,12 @@ function loadTrackToPlatter(track) {
 function ejectDiscFromPlatter() {
   stopTurntable();
   isDiscLoaded = false;
-  vinylRecord.classList.add('ejecting');
+  
+  // Animación de salida y ocultar el vinilo
+  vinylRecord.classList.remove('vinyl-visible');
+  vinylRecord.classList.add('vinyl-hidden');
   
   setTimeout(() => {
-    vinylLabelImg.src = "https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=300&q=80";
-    vinylLabelTitle.textContent = "SIN DISCO";
-    vinylLabelArtist.textContent = "Arrastra un tema";
     trackStatus.textContent = "BANDEJA VACÍA";
     currentTrack = null;
   }, 300);
