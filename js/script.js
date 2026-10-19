@@ -9,12 +9,18 @@ let highEqNode;
 let analyserNode;
 let crackleNode;
 
+// Audio Recorder
+let mediaRecorder;
+let recordedChunks = [];
+let isRecording = false;
+
 // Application State
 let isPlaying = false;
 let currentTrack = null;
 let currentRpmMultiplier = 1.0;
 let userPitchMultiplier = 1.0;
 let isDiscLoaded = true;
+let currentShelfTracks = [];
 
 // DOM Elements
 const vinylRecord = document.getElementById('vinyl-record');
@@ -22,6 +28,8 @@ const tonearm = document.getElementById('tonearm');
 const powerBtn = document.getElementById('power-btn');
 const powerText = document.getElementById('power-text');
 const ejectBtn = document.getElementById('eject-btn');
+const recordBtn = document.getElementById('record-btn');
+const recordText = document.getElementById('record-text');
 const pitchSlider = document.getElementById('pitch-slider');
 const pitchVal = document.getElementById('pitch-val');
 const volSlider = document.getElementById('vol-slider');
@@ -34,6 +42,7 @@ const vinylLabelTitle = document.getElementById('vinyl-label-title');
 const vinylLabelArtist = document.getElementById('vinyl-label-artist');
 const searchForm = document.getElementById('search-form');
 const searchInput = document.getElementById('search-input');
+const localFileInput = document.getElementById('local-file-input');
 const recordShelf = document.getElementById('record-shelf');
 const trackStatus = document.getElementById('track-status');
 const timeDisplay = document.getElementById('time-display');
@@ -42,7 +51,7 @@ const ctx = canvas.getContext('2d');
 const vuL = document.getElementById('vu-l');
 const vuR = document.getElementById('vu-r');
 
-// Pistas musicales iniciales de alta compatibilidad
+// Initial Collection Tracks
 const defaultTracks = [
   {
     title: "Cyberpunk Night Walk",
@@ -101,6 +110,7 @@ function initAudioEngine() {
   audioElement.addEventListener('timeupdate', updateTimeDisplay);
   audioElement.addEventListener('ended', () => stopTurntable());
 
+  restoreUserSettings();
   startVisualizer();
 }
 
@@ -135,13 +145,12 @@ function stopVinylCrackle() {
   }
 }
 
-// Cargar disco en el plato
+// Cargar disco
 function loadTrackToPlatter(track) {
   isDiscLoaded = true;
   currentTrack = track;
   
-  // Hacer visible el disco
-  vinylRecord.classList.remove('vinyl-hidden', 'ejecting');
+  vinylRecord.classList.remove('vinyl-hidden');
   vinylRecord.classList.add('vinyl-visible');
 
   vinylLabelImg.src = track.cover;
@@ -159,10 +168,9 @@ function ejectDiscFromPlatter() {
   stopTurntable();
   isDiscLoaded = false;
   
-  // Animación de salida y ocultar el vinilo
   vinylRecord.classList.remove('vinyl-visible');
   vinylRecord.classList.add('vinyl-hidden');
-  
+
   setTimeout(() => {
     trackStatus.textContent = "BANDEJA VACÍA";
     currentTrack = null;
@@ -193,16 +201,13 @@ function playTurntable() {
   
   audioElement.play().then(() => {
     isPlaying = true;
-    vinylRecord.classList.remove('ejecting');
     vinylRecord.classList.add('spinning');
     tonearm.classList.remove('tonearm-rest');
     tonearm.classList.add('tonearm-play');
     powerText.textContent = "STOP / CUE";
     powerBtn.classList.replace('from-cyan-600', 'from-amber-600');
     createVinylCrackle();
-  }).catch(err => {
-    console.error("Audio error:", err);
-  });
+  }).catch(err => console.error("Audio error:", err));
 }
 
 function stopTurntable() {
@@ -221,7 +226,40 @@ function updatePlaybackSpeed() {
   }
 }
 
-// Buscador optimizado conectado a la API de iTunes para streaming fluido
+// Grabador de Audio Processado
+function toggleAudioRecording() {
+  initAudioEngine();
+  if (!isRecording) {
+    recordedChunks = [];
+    const dest = audioCtx.createMediaStreamDestination();
+    gainNode.connect(dest);
+
+    mediaRecorder = new MediaRecorder(dest.stream);
+    mediaRecorder.ondataavailable = e => recordedChunks.push(e.data);
+    mediaRecorder.onstop = exportAudioRecord;
+
+    mediaRecorder.start();
+    isRecording = true;
+    recordText.textContent = "GRABANDO... CLIC PARA DETENER";
+    recordBtn.classList.replace('bg-zinc-800', 'bg-red-600');
+  } else {
+    mediaRecorder.stop();
+    isRecording = false;
+    recordText.textContent = "GRAVAR AUDIO PROCESADO";
+    recordBtn.classList.replace('bg-red-600', 'bg-zinc-800');
+  }
+}
+
+function exportAudioRecord() {
+  const blob = new Blob(recordedChunks, { type: 'audio/mp3' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `Phonograph_Record_${Date.now()}.mp3`;
+  a.click();
+}
+
+// Búsqueda de Música en API
 async function searchMusicAPI(query) {
   recordShelf.innerHTML = `<div class="col-span-2 text-center text-xs text-cyan-400 py-8 animate-pulse"><i class="fa-solid fa-spinner fa-spin mr-2"></i> Buscando en catálogos...</div>`;
 
@@ -234,14 +272,15 @@ async function searchMusicAPI(query) {
       return;
     }
 
-    const tracks = data.results.map(item => ({
+    currentShelfTracks = data.results.map(item => ({
       title: item.trackName,
       artist: item.artistName,
       cover: item.artworkUrl100.replace('100x100bb', '300x300bb'),
       audioUrl: item.previewUrl
     }));
 
-    renderRecordShelf(tracks);
+    localStorage.setItem('last_search', query);
+    renderRecordShelf(currentShelfTracks);
   } catch (error) {
     console.error("Error API:", error);
     renderRecordShelf(defaultTracks);
@@ -250,12 +289,15 @@ async function searchMusicAPI(query) {
 
 function renderRecordShelf(tracks) {
   recordShelf.innerHTML = '';
-  tracks.forEach(track => {
+  currentShelfTracks = tracks;
+
+  tracks.forEach((track, index) => {
     const card = document.createElement('div');
-    card.className = "bg-zinc-950 p-2.5 rounded-2xl border border-zinc-800 hover:border-cyan-500 transition group cursor-pointer flex flex-col items-center text-center shadow-lg";
+    card.className = "bg-zinc-950 p-2.5 rounded-2xl border border-zinc-800 hover:border-cyan-500 transition group cursor-pointer flex flex-col items-center text-center shadow-lg relative";
     card.draggable = true;
 
     card.innerHTML = `
+      <span class="absolute top-2 left-2 bg-zinc-900/90 text-cyan-400 text-[9px] font-mono px-1.5 py-0.5 rounded border border-zinc-700">${index + 1}</span>
       <div class="relative w-24 h-24 mb-2 rounded-xl overflow-hidden shadow-md group-hover:scale-105 transition transform">
         <img src="${track.cover}" class="w-full h-full object-cover">
         <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
@@ -278,6 +320,24 @@ function renderRecordShelf(tracks) {
 
     recordShelf.appendChild(card);
   });
+}
+
+// Cargar archivo MP3 local
+function handleLocalFileSelect(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const objectUrl = URL.createObjectURL(file);
+  const customTrack = {
+    title: file.name.replace(/\.[^/.]+$/, ""),
+    artist: "Archivo Local",
+    cover: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=300&q=80",
+    audioUrl: objectUrl
+  };
+
+  initAudioEngine();
+  loadTrackToPlatter(customTrack);
+  playTurntable();
 }
 
 function startVisualizer() {
@@ -321,21 +381,51 @@ function updateTimeDisplay() {
   timeDisplay.textContent = `${curMins}:${curSecs} / ${durMins}:${durSecs}`;
 }
 
+// Configuración de LocalStorage
+function saveUserSettings() {
+  if (!volSlider) return;
+  const settings = {
+    vol: volSlider.value,
+    low: eqLow.value,
+    mid: eqMid.value,
+    high: eqHigh.value
+  };
+  localStorage.setItem('turntable_settings', JSON.stringify(settings));
+}
+
+function restoreUserSettings() {
+  const saved = localStorage.getItem('turntable_settings');
+  if (!saved) return;
+  const settings = JSON.parse(saved);
+  volSlider.value = settings.vol;
+  if (gainNode) gainNode.gain.value = settings.vol;
+  volVal.textContent = `${Math.round(settings.vol * 100)}%`;
+
+  eqLow.value = settings.low;
+  if (lowEqNode) lowEqNode.gain.value = settings.low;
+  eqMid.value = settings.mid;
+  if (midEqNode) midEqNode.gain.value = settings.mid;
+  eqHigh.value = settings.high;
+  if (highEqNode) highEqNode.gain.value = settings.high;
+}
+
 function setupEventListeners() {
   powerBtn.addEventListener('click', togglePower);
   ejectBtn.addEventListener('click', ejectDiscFromPlatter);
+  recordBtn.addEventListener('click', toggleAudioRecording);
+  localFileInput.addEventListener('change', handleLocalFileSelect);
 
   document.getElementById('rpm-33').addEventListener('click', (e) => {
     currentRpmMultiplier = 1.0;
-    e.target.className = "px-2 py-1 text-xs font-mono rounded bg-cyan-500 text-black font-bold";
-    document.getElementById('rpm-45').className = "px-2 py-1 text-xs font-mono rounded text-zinc-400 hover:text-white";
+    e.target.className = "px-2.5 py-1 text-xs font-mono rounded bg-cyan-500 text-black font-bold";
+    document.getElementById('rpm-45').className = "px-2.5 py-1 text-xs font-mono rounded text-zinc-400 hover:text-white";
     updatePlaybackSpeed();
   });
 
   document.getElementById('rpm-45').addEventListener('click', (e) => {
     currentRpmMultiplier = 1.35;
-    e.target.className = "px-2 py-1 text-xs font-mono rounded bg-cyan-500 text-black font-bold";
-    document.getElementById('rpm-33').className = "px-2 py-1 text-xs font-mono rounded text-zinc-400 hover:text-white";
+    e.target.className = "px-2.5 py-1 text-xs font-mono rounded bg-cyan-500 text-black font-bold";
+    document.getElementById('rpm-33').className = "px-2.5 py-1 text-xs font-mono rounded text-zinc-400 hover:text-white";
     updatePlaybackSpeed();
   });
 
@@ -348,11 +438,12 @@ function setupEventListeners() {
   volSlider.addEventListener('input', (e) => {
     if (gainNode) gainNode.gain.value = parseFloat(e.target.value);
     volVal.textContent = `${Math.round(e.target.value * 100)}%`;
+    saveUserSettings();
   });
 
-  eqLow.addEventListener('input', (e) => { if (lowEqNode) lowEqNode.gain.value = parseFloat(e.target.value); });
-  eqMid.addEventListener('input', (e) => { if (midEqNode) midEqNode.gain.value = parseFloat(e.target.value); });
-  eqHigh.addEventListener('input', (e) => { if (highEqNode) highEqNode.gain.value = parseFloat(e.target.value); });
+  eqLow.addEventListener('input', (e) => { if (lowEqNode) lowEqNode.gain.value = parseFloat(e.target.value); saveUserSettings(); });
+  eqMid.addEventListener('input', (e) => { if (midEqNode) midEqNode.gain.value = parseFloat(e.target.value); saveUserSettings(); });
+  eqHigh.addEventListener('input', (e) => { if (highEqNode) highEqNode.gain.value = parseFloat(e.target.value); saveUserSettings(); });
 
   searchForm.addEventListener('submit', (e) => {
     e.preventDefault();
@@ -366,6 +457,25 @@ function setupEventListeners() {
       searchInput.value = tag.textContent;
       searchMusicAPI(tag.textContent);
     });
+  });
+
+  // Atajos de Teclado
+  document.addEventListener('keydown', (e) => {
+    if (e.target.tagName === 'INPUT') return;
+
+    if (e.code === 'Space') {
+      e.preventDefault();
+      togglePower();
+    } else if (e.code === 'KeyE') {
+      ejectDiscFromPlatter();
+    } else if (e.key >= '1' && e.key <= '6') {
+      const idx = parseInt(e.key) - 1;
+      if (currentShelfTracks[idx]) {
+        initAudioEngine();
+        loadTrackToPlatter(currentShelfTracks[idx]);
+        playTurntable();
+      }
+    }
   });
 
   vinylRecord.addEventListener('dragover', (e) => e.preventDefault());
@@ -382,6 +492,11 @@ function setupEventListeners() {
 
 document.addEventListener('DOMContentLoaded', () => {
   setupEventListeners();
-  renderRecordShelf(defaultTracks);
+  const lastSearch = localStorage.getItem('last_search');
+  if (lastSearch) {
+    searchMusicAPI(lastSearch);
+  } else {
+    renderRecordShelf(defaultTracks);
+  }
   loadTrackToPlatter(defaultTracks[0]);
 });
