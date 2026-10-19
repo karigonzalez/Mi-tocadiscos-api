@@ -35,9 +35,5 @@ Una consola tocadiscos analógica e interactiva desarrollada con **HTML5, Tailwi
 - **iTunes Search REST API**
 
 ---
-
-## 🚀 Instalación y Uso Local
-
-1. Clona el repositorio:
-   ```bash
-   git clone [https://github.com/karigonzalez/Mi-tocadiscos-api.git](https://github.com/karigonzalez/Mi-tocadiscos-api.git)
+##  Url:
+https://karigonzalez.github.io/Mi-tocadiscos-api/
