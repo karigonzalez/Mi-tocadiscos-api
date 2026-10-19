@@ -41,11 +41,16 @@
           
           <!-- Platter / Record Deck Section -->
           <div class="md:col-span-8 flex justify-center relative py-4">
-            <!-- Turntable Platter Base -->
-            <div class="relative w-[300px] h-[300px] sm:w-[360px] sm:h-[360px] rounded-full bg-zinc-900 p-3 shadow-2xl border-4 border-zinc-800 flex items-center justify-center">
+            <!-- Plato Base (Platter + Slipmat) con textura realista -->
+            <div class="relative w-[300px] h-[300px] sm:w-[360px] sm:h-[360px] rounded-full platter-mat p-3 flex items-center justify-center shadow-2xl">
               
-              <!-- Rotating Vinyl Record -->
-              <div id="vinyl-record" class="w-full h-full rounded-full vinyl-grooves relative flex items-center justify-center cursor-grab active:cursor-grabbing shadow-2xl">
+              <!-- Eje Central Metálico (Spindle) visible aun sin disco -->
+              <div class="absolute w-6 h-6 rounded-full bg-gradient-to-tr from-zinc-400 via-zinc-100 to-zinc-500 border-2 border-zinc-700 shadow-md z-10 flex items-center justify-center">
+                <div class="w-2 h-2 rounded-full bg-zinc-900"></div>
+              </div>
+
+              <!-- Disco Vinilo (Se oculta o muestra dinámicamente) -->
+              <div id="vinyl-record" class="w-full h-full rounded-full vinyl-grooves relative flex items-center justify-center cursor-grab active:cursor-grabbing shadow-2xl vinyl-visible z-20">
                 <!-- Outer Ring -->
                 <div class="w-full h-full rounded-full border border-zinc-700/30"></div>
                 
@@ -57,9 +62,6 @@
                   <span id="vinyl-label-artist" class="relative text-[8px] text-cyan-400/80 line-clamp-1 z-10">Selecciona o Arrastra un Disco</span>
                   <div class="w-4 h-4 bg-zinc-950 border-2 border-cyan-500/80 rounded-full my-1 z-10"></div>
                 </div>
-
-                <!-- Center Spindle -->
-                <div class="absolute w-3 h-3 bg-gradient-to-tr from-zinc-300 to-zinc-100 rounded-full border border-zinc-600 shadow-md z-20"></div>
               </div>
 
               <!-- Tonearm Assembly -->
