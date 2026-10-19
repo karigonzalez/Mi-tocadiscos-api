@@ -1,27 +1,28 @@
-/* Custom Vintage Wood Styling */
+/* --- Nueva Paleta de Colores: Cyber/Studio Moderno --- */
 .turntable-body {
-  background: linear-gradient(145deg, #2a1a10 0%, #170d07 100%);
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8), inset 0 2px 4px rgba(255, 200, 120, 0.1);
+  background: linear-gradient(145deg, #090d16 0%, #030508 100%);
+  box-shadow: 0 25px 50px -12px rgba(0, 242, 254, 0.15), inset 0 2px 4px rgba(0, 242, 254, 0.1);
+  border: 1px solid rgba(0, 242, 254, 0.2);
 }
 
-/* Vinyl Grooves Texture */
+/* Vinyl Grooves Texture con matiz azulado/neon */
 .vinyl-grooves {
   background: radial-gradient(circle, 
-    #18181b 0%, 
-    #09090b 15%, 
-    #27272a 16%, 
-    #09090b 30%, 
-    #18181b 31%, 
-    #09090b 50%, 
-    #27272a 51%, 
-    #09090b 70%, 
-    #18181b 71%, 
-    #09090b 100%
+    #0f172a 0%, 
+    #020617 15%, 
+    #1e293b 16%, 
+    #020617 30%, 
+    #0f172a 31%, 
+    #020617 50%, 
+    #1e293b 51%, 
+    #020617 70%, 
+    #0f172a 71%, 
+    #020617 100%
   );
   box-shadow: 0 10px 30px rgba(0,0,0,0.9);
 }
 
-/* Spin Animation */
+/* Animación de giro */
 @keyframes spin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
@@ -29,6 +30,17 @@
 
 .spinning {
   animation: spin 1.8s linear infinite;
+}
+
+/* Animación de expulsión de disco */
+@keyframes ejectDisc {
+  0% { transform: scale(1) translateY(0); opacity: 1; }
+  50% { transform: scale(0.8) translateY(-40px); opacity: 0.7; }
+  100% { transform: scale(0.5) translateY(-120px); opacity: 0; }
+}
+
+.ejecting {
+  animation: ejectDisc 0.6s ease-in-out forwards;
 }
 
 /* Tonearm Rotations */
@@ -48,11 +60,11 @@
 }
 
 .scrollbar-thin::-webkit-scrollbar-track {
-  background: #18181b;
+  background: #020617;
   border-radius: 8px;
 }
 
 .scrollbar-thin::-webkit-scrollbar-thumb {
-  background: #78350f;
+  background: #06b6d4;
   border-radius: 8px;
 }
