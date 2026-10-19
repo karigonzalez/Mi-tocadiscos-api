@@ -1,0 +1,58 @@
+/* Custom Vintage Wood Styling */
+.turntable-body {
+  background: linear-gradient(145deg, #2a1a10 0%, #170d07 100%);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8), inset 0 2px 4px rgba(255, 200, 120, 0.1);
+}
+
+/* Vinyl Grooves Texture */
+.vinyl-grooves {
+  background: radial-gradient(circle, 
+    #18181b 0%, 
+    #09090b 15%, 
+    #27272a 16%, 
+    #09090b 30%, 
+    #18181b 31%, 
+    #09090b 50%, 
+    #27272a 51%, 
+    #09090b 70%, 
+    #18181b 71%, 
+    #09090b 100%
+  );
+  box-shadow: 0 10px 30px rgba(0,0,0,0.9);
+}
+
+/* Spin Animation */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.spinning {
+  animation: spin 1.8s linear infinite;
+}
+
+/* Tonearm Rotations */
+.tonearm-rest {
+  transform: rotate(-32deg);
+  transform-origin: top right;
+}
+
+.tonearm-play {
+  transform: rotate(-5deg);
+  transform-origin: top right;
+}
+
+/* Custom Scrollbar */
+.scrollbar-thin::-webkit-scrollbar {
+  width: 4px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: #18181b;
+  border-radius: 8px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: #78350f;
+  border-radius: 8px;
+}
